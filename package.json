@@ -1,12 +1,11 @@
 {
   "name": "inspirations",
   "version": "1.0.0",
-  "description": "Collect Your Inspirations",
+  "description": "Collect Inspirations",
   "main": "main.js",
   "build": {
     "appId": "com.mountainscreen.Inspirations",
-    "productName": "Inspirations",
-    "publish": null
+    "productName": "Inspirations"
   },
   "scripts": {
     "start": "electron .",
