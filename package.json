@@ -1,0 +1,28 @@
+{
+  "name": "inspirations",
+  "version": "1.0.0",
+  "description": "Collect Your Inspirations",
+  "main": "main.js",
+  "build": {
+    "appId": "com.mountainscreen.Inspirations",
+    "productName": "Inspirations",
+    "publish": null
+  },
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "electron-builder install-app-deps",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "Ian Gruenig",
+  "license": "MIT",
+  "dependencies": {
+    "level": "^7.0.0",
+    "sharp": "^0.29.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "electron": "^13.2.3",
+    "electron-builder": "^22.5.1"
+  }
+}
