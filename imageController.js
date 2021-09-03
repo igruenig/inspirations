@@ -49,9 +49,11 @@ class ImageController {
   }
 
   update(image) {
-
+    return this.store.updateImage(image);
   }
 
 }
 
-module.exports = (db, options) => { return new ImageController(db, options); };
+module.exports = (db, options) => { 
+  return new ImageController(db, options); 
+};

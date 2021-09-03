@@ -1,3 +1,6 @@
+const db = require('./db');
+const models = require('./models');
+
 class Store {
 
   constructor(location) {
@@ -10,7 +13,7 @@ class Store {
       LEFT JOIN taggings it ON i.id = it.imageId 
       LEFT JOIN tags t ON it.tagId = t.id 
       GROUP BY i.id 
-      ORDER BY i.createdAt DESC
+      ORDER BY i.createdAt DESC, t.name
     `);
 
     this.selectImageStatement = db.prepare(`
@@ -38,11 +41,6 @@ class Store {
       VALUES (:id, :name)
     `)
 
-    this.selectTagsStatement = db.prepare(`
-      SELECT * FROM tags 
-      WHERE name IN (?)
-    `);
-
     this.selectTagStatement = db.prepare(`
       SELECT * FROM tags 
       WHERE name = ?
@@ -54,30 +52,38 @@ class Store {
       WHERE id = :id
     `)
 
-    this.insertTaggingStatement = db.prepare(`
+    this.selectImageTagsStatement = db.prepare(`
+      SELECT * FROM taggings
+      WHERE imageID = ?
+    `)
+
+    this.insertImageTagStatement = db.prepare(`
       INSERT INTO taggings 
       VALUES (:imageId, :tagId)
     `)
 
-    this.deleteTaggingStatement = db.prepare(`
+    this.deleteImageTagStatement = db.prepare(`
       DELETE FROM taggings 
       WHERE imageId = :imageId AND tagId = :tagId
     `)
+
+    this.setTags = db.transaction((imageId, newTagIds) => {
+      const existingTagIds = this.selectImageTagsStatement.all(imageId).map(imageTag => imageTag.tagId)
+      const toDelete = existingTagIds.filter(tagId => !newTagIds.includes(tagId))
+      const toInsert = newTagIds.filter(tagId => !existingTagIds.includes(tagId))
+      
+      toDelete.forEach(tagId => {
+        this.deleteImageTagStatement.run({ imageId: imageId, tagId })
+      })
+
+      toInsert.forEach(tagId => {
+        this.insertImageTagStatement.run({ imageId: imageId, tagId })
+      })
+    })
   }
 
   fetchImages(options) {
-    const images = this.selectImagesStatement.all();
-
-    // store tags in array
-    images.forEach(image => {
-      if (!image.tags) {
-        image.tags = [];
-        return
-      }
-      image.tags = image.tags.split(',')
-    })
-
-    return images;
+    return this.selectImagesStatement.all();
   }
 
   createImage(image) {
@@ -89,19 +95,22 @@ class Store {
   }
 
   updateImage(image) {
-    const tags = this.selectTagsStatement.all(image.tags);
-
-    image.tags.forEach(tagName => {
-      if (!tags.find(tag => tag.name == tagName)) {
-        this.insertTagStatement.run()
+    var newTagIds = [];
+    const newTagNames = image.tags.split(',');
+    
+    newTagNames.forEach(tagName => {
+      const tag = this.selectTagStatement.get(tagName.trim());
+      if (tag) {
+        newTagIds.push(tag.id)
+      } else {
+        const newTag = models.newTag(tagName.trim());
+        this.insertTagStatement.run(newTag);
+        newTagIds.push(newTag.id);
       }
     })
-    
 
-    // insert all tags that do not exist yet
-    // start transaction
-    // delete all tags not in updated image
-    // add all missing tags
+    this.setTags(image.id, newTagIds);
+    return image;
   }
 
 }

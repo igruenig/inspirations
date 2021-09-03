@@ -15,8 +15,8 @@ contextBridge.exposeInMainWorld('createImage', async (filePath) => {
   return await ipcRenderer.invoke('create-image', filePath);
 });
 
-contextBridge.exposeInMainWorld('updateImage', async (image) => {
-  await ipcRenderer.invoke('update-image', image);
+contextBridge.exposeInMainWorld('updateImage', (image) => {
+  return ipcRenderer.sendSync('update-image', image);
 });
 
 contextBridge.exposeInMainWorld('openImage', (image) => {

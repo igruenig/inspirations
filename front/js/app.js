@@ -91,8 +91,8 @@ document.addEventListener('click', (event) => {
     editingImage = image;
     tags.value = image.tags || '';
     url.value = image.url || '';
-    window.openImage(image);
-    //overlay.classList.toggle('overlay--show');
+    //window.openImage(image);
+    overlay.classList.toggle('overlay--show');
 
   } else if (event.target.classList.contains("overlay")) {
     editingImage.tags = tags.value;

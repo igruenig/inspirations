@@ -68,8 +68,8 @@ ipcMain.handle('create-image', async (event, filePath) => {
   return await imageController.create(filePath)
 })
 
-ipcMain.handle('update-image', (event, image) => {
-  imageController.updateImage(image);
+ipcMain.on('update-image', (event, image) => {
+  event.returnValue = imageController.update(image);
 })
 
 // ImageView
