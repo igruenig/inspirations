@@ -3,10 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const basePath = app.getPath('userData');
-const dbPath = path.join(basePath, 'meta.db');
-const db = require('./db')(dbPath);
-
-const imageController = require('./imageController')(db);
+const imageController = require('./imageController')({ basePath });
 
 var mainWindow;
 var imageWindows = [];
@@ -17,6 +14,7 @@ function createWindow () {
     width: 1200,
     height: 1000,
     webPreferences: {
+      scrollBounce: true,
       nativeWindowOpen: true, // to enable window.open in renderer
       nodeIntegration: false,
       contextIsolation: true,
@@ -52,48 +50,27 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()
 })
 
-
+// Main API
 
 ipcMain.on('base-path', (event, arg) => {
   event.returnValue = basePath;
 });
 
+ipcMain.on('fetch-images', (event, options) => {
+  event.returnValue = imageController.fetchImages(options);
+})
+
+ipcMain.on('get-image', (event, id) => {
+  event.returnValue = imageController.get(id);
+})
+
 ipcMain.handle('create-image', async (event, filePath) => {
-  return await imageController.create(basePath, filePath)
+  return await imageController.create(filePath)
 })
 
-ipcMain.handle('all-images', (event, options) => {
-  return imageController.all(options);
+ipcMain.handle('update-image', (event, image) => {
+  imageController.updateImage(image);
 })
-
-ipcMain.handle('get-image', async (event, id) => {
-  return await imageController.get(id);
-})
-
-ipcMain.handle('update-image', async (event, image) => {
-  return await updateImage(image);
-})
-
-
-function updateImage(image) {
-  return new Promise((resolve, reject) => {
-    const stream = db.createReadStream()
-    stream.on('data', (data) => {
-      const meta = JSON.parse(data.value);
-      if (meta.id == image.id) {
-        stream.destroy();
-
-        meta.tags = image.tags;
-        meta.url = image.url;
-        db.put(data.key, JSON.stringify(meta));
-        resolve();
-      }
-    });
-    stream.on('end', () => {
-      reject("not found");
-    })
-  })
-}
 
 // ImageView
 
@@ -108,18 +85,28 @@ ipcMain.on('open-image', (event, image) => {
   }
 
   const mainBounds = mainWindow.getNormalBounds();
+  const imageWidth = Math.min(image.width, 1600);
+  const imageHeight = image.height * (image.width / image.width);
+  const windowHeight = Math.min(imageHeight, 1200);
 
   const imageWindow = new BrowserWindow({
     x: mainBounds.x + 100,
     y: mainBounds.y + 50,
-    width: 1200,
-    height: 1000,
+    useContentSize: true, // width and height measure the actual content
+    width: imageWidth,
+    height: windowHeight,
+    frame: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false
     }
   })
+  
+  if (imageHeight < 1600) {
+    imageWindow.setAspectRatio(image.width/image.height);
+  }
+
   imageWindow.loadFile(path.join(__dirname, "front/imageView.html"))
   imageWindow.once('ready-to-show', () => {
     imageWindow.webContents.executeJavaScript(`

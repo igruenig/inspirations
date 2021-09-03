@@ -1,96 +1,57 @@
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
-const { v4: uuid } = require('uuid');
+const models = require('./models');
 
 class ImageController {
 
-  constructor(db) {
-    this.db = db;
-
-    this.allStatement = db.prepare(`
-      SELECT i.*, group_concat(t.name) tags
-      FROM image i
-      LEFT JOIN imageTag it ON i.id = it.imageId
-      LEFT JOIN tag t ON it.tagId = t.id
-      GROUP BY i.id
-    `);
-
-    this.createStatement = db.prepare(`
-      INSERT INTO image 
-      VALUES (:id, :fileName, :width, :height, :originalPath, :thumbnailPath, :url, :comment)
-    `);
-
-    this.getStatement = db.prepare(`
-      SELECT i.*, group_concat(t.name) tags
-      FROM image i
-      LEFT JOIN imageTag it ON i.id = it.imageId
-      LEFT JOIN tag t ON it.tagId = t.id
-      WHERE i.id = ?
-      GROUP BY i.id
-    `);
+  constructor(options) {
+    this.options = options;
+    this.store = require('./store')(options.basePath);
   }
 
-  all(options) {    
-    const images = this.allStatement.all();
-
-    // store tags in array
-    images.forEach(image => {
-      if (!image.tags) {
-        return
-      }
-      image.tags = image.tags.split(',')
-    })
-
-    return images;
+  fetchImages(options) {    
+    return this.store.fetchImages(options);
   }
 
-  async create(basePath, filePath) {
-    const extension = path.extname(filePath);
-    const date = new Date();
-    const imageID = uuid();
+  async create(filePath) {
+    const image = models.newImage(filePath);
+    const basePath = this.options.basePath;
 
-    const imagesPath = 'images';
-    const fileName = imageID + extension;
-    const folderName = date.getFullYear() + '-' + date.getMonth();
-    const originalPath = path.join(imagesPath, folderName, 'originals');
-    const thumbnailPath = path.join(imagesPath, folderName, 'thumbnails');
+    // create the directory to store the original image
+    const originalImageDirectory = path.join(basePath, image.originalPath);
+    fs.mkdirSync(originalImageDirectory, { recursive: true });
+    fs.copyFileSync(filePath, path.join(basePath, image.originalPath, image.fileName));
 
-    const image = { 
-      id: imageID,
-      fileName,
-      width: null,
-      height: null,
-      originalPath,
-      thumbnailPath,
-      url: '',
-      comment: ''
-    };
+    // prepare the directory for the thumbnail
+    const thumbnailDirectory = path.join(basePath, image.thumbnailPath);
+    fs.mkdirSync(thumbnailDirectory, { recursive: true });
 
-    const data = fs.readFileSync(filePath);
-    fs.mkdirSync(path.join(basePath, originalPath), { recursive: true });
-    fs.mkdirSync(path.join(basePath, thumbnailPath), { recursive: true });
-    fs.writeFileSync(path.join(basePath, originalPath, fileName), data);
-
-    const imageData = sharp(data)
+    // create thumbnail
+    const imageData = sharp(filePath)
     const metadata = await imageData.metadata()
     image.width = metadata.width;
     image.height = metadata.height;
 
+    const thumbnailPath = path.join(basePath, image.thumbnailPath, image.fileName);
     if (metadata.width > 500) {
-      fs.writeFileSync(path.join(basePath, thumbnailPath, fileName), await imageData.resize(500).toBuffer());
+      fs.writeFileSync(thumbnailPath, await imageData.resize(500).toBuffer());
     } else {
-      fs.writeFileSync(path.join(basePath, thumbnailPath, fileName), await imageData.toBuffer());
+      fs.writeFileSync(thumbnailPath, await imageData.toBuffer());
     }
 
-    this.createStatement.run(image);
+    this.store.createImage(image);
     return image;
   }
 
   get(id) {
-    return this.getStatement.get(id)
+    return this.store.getImage(id);
+  }
+
+  update(image) {
+
   }
 
 }
 
-module.exports = (db) => { return new ImageController(db); };
+module.exports = (db, options) => { return new ImageController(db, options); };

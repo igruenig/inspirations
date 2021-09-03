@@ -34,11 +34,12 @@ html, body {
 .grid-item img {
   display: block;
   width: 100%;
-  transition: .3s ease;
+  transition: .3s;
 }
 
 .grid-item img:hover {
-  filter: brightness(90%);
+  /*filter: brightness(95%);*/
+  transform: scale(0.98);
 }
 
 .form-container {

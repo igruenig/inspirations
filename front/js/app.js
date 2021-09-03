@@ -10,12 +10,11 @@ const topMargin = 4;
 var editingImage = {};
 
 // TODO: implement infinite scrolling
-window.allImages({limit: 1000}, (images) => {
-  //const sorted = images.sort((a, b) => b.height/b.width - a.height/a.width)
-  images.forEach(image => {
-    prependImage(image);
-  });
-});
+
+// initial render
+const images = window.fetchImages();
+images.forEach(image => prependImage(image));
+
 
 window.onresize = () => {
   // TODO: rearrange images
@@ -44,7 +43,7 @@ function updateColumn(index, image) {
 function prependImage(image) {
   const imageElement = $(`
   <div class="grid-item">
-    <a href="#"><img id="${image.id}" width="${image.width}" height="${image.height}" src="${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}"></a>
+    <img id="${image.id}" width="${image.width}" height="${image.height}" src="${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}">
   </div>
   `);
   const columnIndex = getNextColumn();
@@ -61,24 +60,22 @@ window.dropHandler = async function dropHandler(ev) {
   // Prevent default behavior (Prevent file from being opened)
   ev.preventDefault();
 
-  if (ev.dataTransfer.items) {
-    // Use DataTransferItemList interface to access the file(s)
-    for (var i = 0; i < ev.dataTransfer.items.length; i++) {
-      // If dropped items aren't files, reject them
-      if (ev.dataTransfer.items[i].kind === 'file') {
-        var file = ev.dataTransfer.items[i].getAsFile();
-        //console.log('... file[' + i + '].path = ' + file.path);
-        const image = await window.createImage(file.path);
-        prependImage(image);
-      }
+  const items = ev.dataTransfer.items;
+  if (!items) { 
+    return; 
+  }
+
+  // read out the files first, otherwise they are gone after calling await
+  var files = [];
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].kind === 'file') {
+      files.push(items[i].getAsFile())
     }
-  } else {
-    // Use DataTransfer interface to access the file(s)
-    for (var i = 0; i < ev.dataTransfer.files.length; i++) {
-      //console.log('... file[' + i + '].path = ' + ev.dataTransfer.files[i].path);
-      const image = await window.createImage(ev.dataTransfer.files[i].path);
-      prependImage(image);
-    }
+  }
+
+  for (var i = 0; i < files.length; i++) {
+    const image = await window.createImage(files[i].path);
+    prependImage(image);
   }
 }
 
@@ -90,13 +87,12 @@ document.addEventListener('click', (event) => {
   event.preventDefault();
   
   if (event.target.tagName == 'IMG') {
-    window.getImage(event.target.id, (image) => {
-      editingImage = image;
-      tags.value = image.tags || '';
-      url.value = image.url || '';
-      window.openImage(image);
-      //overlay.classList.toggle('overlay--show');
-    })
+    const image = window.getImage(event.target.id)
+    editingImage = image;
+    tags.value = image.tags || '';
+    url.value = image.url || '';
+    window.openImage(image);
+    //overlay.classList.toggle('overlay--show');
 
   } else if (event.target.classList.contains("overlay")) {
     editingImage.tags = tags.value;
