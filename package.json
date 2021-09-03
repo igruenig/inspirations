@@ -16,6 +16,7 @@
   "author": "Ian Gruenig",
   "license": "MIT",
   "dependencies": {
+    "better-sqlite3": "^7.4.3",
     "level": "^7.0.0",
     "sharp": "^0.29.0",
     "uuid": "^8.3.2"

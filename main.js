@@ -1,16 +1,16 @@
-// main.js
-
-// Modules to control application life and create native browser window
 const { app, BrowserWindow, ipcMain } = require('electron')
 const fs = require('fs');
-const path = require('path')
-const level = require('level');
+const path = require('path');
+
+
 const { v4: uuid } = require('uuid');
 const sharp = require('sharp');
 
 const basePath = app.getPath('userData');
-const dbPath = path.join(basePath, 'meta');
-const db = level(dbPath);
+const dbPath = path.join(basePath, 'meta.db');
+const db = require('./db')(dbPath);
+
+const imageController = require('./imageController')(db);
 
 var mainWindow;
 var imageWindows = [];
@@ -30,7 +30,7 @@ function createWindow () {
   })
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, "index.html"))
+  mainWindow.loadFile(path.join(__dirname, "front/index.html"))
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
@@ -83,7 +83,7 @@ ipcMain.on('open-image', (event, image) => {
       enableRemoteModule: false
     }
   })
-  imageWindow.loadFile(path.join(__dirname, "imageView.html"))
+  imageWindow.loadFile(path.join(__dirname, "front/imageView.html"))
   imageWindow.once('ready-to-show', () => {
     imageWindow.webContents.executeJavaScript(`
       document.body.innerHTML += "<img src='${basePath + "/" + image.originalPath + "/" + image.fileName}'>"
@@ -101,13 +101,13 @@ ipcMain.on('open-image', (event, image) => {
 })
 
 ipcMain.handle('save-image', async (event, filePath) => {
-  const result = await saveImage(filePath);
-  return result;
+  const image = await saveImage(filePath);
+  return image;
 })
 
-ipcMain.handle('load-images', async (event, options) => {
-  const result = await loadImages(options);
-  return result;
+ipcMain.handle('load-images', (event, options) => {
+  const images = imageController.all(options);
+  return images;
 })
 
 ipcMain.handle('load-image', async (event, id) => {
@@ -125,9 +125,7 @@ function saveImage(filePath) {
 
   const extension = path.extname(filePath);
   const date = new Date();
-  const timestamp = Date.now();
   const imageID = uuid();
-  const imageKey = timestamp + '-' + imageID;
 
   const imagesPath = 'images';
   const fileName = imageID + extension;
@@ -135,11 +133,15 @@ function saveImage(filePath) {
   const originalPath = path.join(imagesPath, folderName, 'originals');
   const thumbnailPath = path.join(imagesPath, folderName, 'thumbnails');
   
-  const meta = { 
+  const image = { 
     id: imageID,
     fileName: fileName,
+    width: null,
+    height: null,
     originalPath,
-    thumbnailPath
+    thumbnailPath,
+    url: '',
+    comment: ''
   };
 
   fs.mkdirSync(path.join(basePath, originalPath), { recursive: true });
@@ -152,8 +154,8 @@ function saveImage(filePath) {
     thumbnail
     .metadata()
     .then((metadata) => {
-      meta.width = metadata.width;
-      meta.height = metadata.height;
+      image.width = metadata.width;
+      image.height = metadata.height;
 
       if (metadata.width > 500) {
         return thumbnail
@@ -165,8 +167,8 @@ function saveImage(filePath) {
     })
     .then((data) => {
       fs.writeFileSync(path.join(basePath, thumbnailPath, fileName), data);
-      db.put(imageKey, JSON.stringify(meta));
-      resolve(meta);
+      imageController.create(image);
+      resolve(image);
     })
   });
 }
@@ -181,20 +183,6 @@ function loadImage(id) {
         resolve(meta);
       }
     });
-  })
-}
-
-function loadImages(options) {
-  return new Promise((resolve, reject) => {
-    const images = [];
-    const stream = db.createReadStream(options)
-    stream.on('data', (data) => {
-      const meta = JSON.parse(data.value);
-      images.push(meta);
-    });
-    stream.on('end', () => {
-      resolve(images);
-    })
   })
 }
 
