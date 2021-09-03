@@ -10,7 +10,7 @@ const topMargin = 4;
 var editingImage = {};
 
 // TODO: implement infinite scrolling
-window.loadImages({limit: 1000}, (images) => {
+window.allImages({limit: 1000}, (images) => {
   //const sorted = images.sort((a, b) => b.height/b.width - a.height/a.width)
   images.forEach(image => {
     prependImage(image);
@@ -57,7 +57,7 @@ window.dragOverHandler = function dragOverHandler(ev) {
   ev.preventDefault();
 }
 
-window.dropHandler = function dropHandler(ev) {
+window.dropHandler = async function dropHandler(ev) {
   // Prevent default behavior (Prevent file from being opened)
   ev.preventDefault();
 
@@ -68,14 +68,16 @@ window.dropHandler = function dropHandler(ev) {
       if (ev.dataTransfer.items[i].kind === 'file') {
         var file = ev.dataTransfer.items[i].getAsFile();
         //console.log('... file[' + i + '].path = ' + file.path);
-        window.saveFile(file.path, prependImage);
+        const image = await window.createImage(file.path);
+        prependImage(image);
       }
     }
   } else {
     // Use DataTransfer interface to access the file(s)
     for (var i = 0; i < ev.dataTransfer.files.length; i++) {
       //console.log('... file[' + i + '].path = ' + ev.dataTransfer.files[i].path);
-      window.saveFile(ev.dataTransfer.files[i].path, prependImage);
+      const image = await window.createImage(ev.dataTransfer.files[i].path);
+      prependImage(image);
     }
   }
 }
@@ -88,7 +90,7 @@ document.addEventListener('click', (event) => {
   event.preventDefault();
   
   if (event.target.tagName == 'IMG') {
-    window.loadImage(event.target.id, (image) => {
+    window.getImage(event.target.id, (image) => {
       editingImage = image;
       tags.value = image.tags || '';
       url.value = image.url || '';
