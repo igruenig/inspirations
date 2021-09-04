@@ -1,12 +1,13 @@
-const columns = []
+const columns = [];
 const columnHeights = [];
+var columnsCount = calculateColumns();
+var isFetching = false;
 
 for (let column = 0; column < 10; column++) {
   columns.push($('#column-'+(column+1)))
   columnHeights.push(0)
 }
 
-const topMargin = 4;
 var editingImage = {};
 
 // TODO: implement infinite scrolling
@@ -14,18 +15,20 @@ var editingImage = {};
 // initial render
 const images = window.fetchImages({
   deleted: 0,
-  offset: 0,
-  limit: 10
+  limit: 15
 });
-images.forEach(image => prependImage(image));
+images.forEach(image => addImage(image));
 
 
 window.onresize = () => {
-  // TODO: rearrange images
+  resetLayout();
+}
+
+function calculateColumns() {
+  return Math.floor(window.innerWidth / 300) + 1;
 }
 
 function getNextColumn() {
-  const columnsCount = Math.floor(window.innerWidth / 300) + 1
   var currentMin = columnHeights[0];
   var shortestColumn = 0;
 
@@ -39,15 +42,27 @@ function getNextColumn() {
   return shortestColumn;
 }
 
+function resetLayout() {
+  const newColumnsCount = calculateColumns();
+  if (columnsCount != newColumnsCount) {
+    columnsCount = newColumnsCount;
+    for (let column = 0; column < 10; column++) {
+      columnHeights[column] = 0;
+    }
+    $('.grid-item').remove();
+    images.forEach(image => addImage(image));
+  }
+}
+
 function updateColumn(index, image) {
   const relativeHeight = image.height / image.width;
   columnHeights[index] += relativeHeight;
 }
 
-function prependImage(image) {
+function addImage(image, prepend) {
   const imageElement = $(`
   <div id="${image.id}" class="grid-item">
-    <img width="${image.width}" height="${image.height}" src="${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}">
+    <img width="${image.width}" height="${image.height}" src="file://${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}">
     <div class="image-overlay">
       <button class="edit-image-button">Edit</button>
       <button class="delete-image-button">Delete</button>
@@ -55,16 +70,20 @@ function prependImage(image) {
   </div>
   `);
   const columnIndex = getNextColumn();
-  columns[columnIndex].prepend(imageElement);
+  if (prepend) {
+    columns[columnIndex].prepend(imageElement);
+  } else {
+    columns[columnIndex].append(imageElement);
+  }
   updateColumn(columnIndex, image);
 }
 
-window.dragOverHandler = function dragOverHandler(ev) {
+function dragOverHandler(ev) {
   // Prevent default behavior (Prevent file from being opened)
   ev.preventDefault();
 }
 
-window.dropHandler = async function dropHandler(ev) {
+async function dropHandler(ev) {
   // Prevent default behavior (Prevent file from being opened)
   ev.preventDefault();
 
@@ -83,7 +102,7 @@ window.dropHandler = async function dropHandler(ev) {
 
   for (var i = 0; i < files.length; i++) {
     const image = await window.createImage(files[i].path);
-    prependImage(image);
+    addImage(image, true);
   }
 }
 
@@ -100,14 +119,17 @@ document.addEventListener('click', (event) => {
     tags.value = image.tags || '';
     url.value = image.url || '';
     overlay.classList.toggle('overlay--show');
+
   } else if (event.target.classList.contains('delete-image-button')) {
     const image = window.getImage(event.target.parentNode.parentNode.id);
     image.deleted = 1;
     window.updateImage(image);
     $('#'+image.id).remove();
+
   } else if (event.target.tagName == 'IMG') {
     const image = window.getImage(event.target.parentNode.id)
     window.openImage(image);
+
   } else if (event.target.classList.contains("overlay")) {
     editingImage.tags = tags.value;
     editingImage.url = url.value;
@@ -116,3 +138,23 @@ document.addEventListener('click', (event) => {
   }
   
 });
+
+window.addEventListener('scroll', () => {
+  if (isFetching) return;
+  const {scrollHeight, scrollTop, clientHeight} = document.documentElement;
+
+  if (scrollTop + clientHeight > scrollHeight - 5) {
+    isFetching = true;
+    const newImages = window.fetchImages({
+      deleted: 0,
+      before: images[images.length-1].id,
+      limit: 15
+    });
+    newImages.forEach(image => {
+      images.push(image);
+      addImage(image);
+    });
+    console.log('fetched more ' + newImages.length + " images")
+    isFetching = false;
+  }
+})

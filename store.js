@@ -8,30 +8,30 @@ class Store {
     const db = sqlite(dbPath);
 
     db.exec(`
-      create table if not exists images (
-        id text primary key not null,
-        fileName text,
-        width integer,
-        height integer,
-        originalPath text,
-        thumbnailPath text,
-        url text,
-        comment text,
-        deleted integer default 0,
-        createdAt datetime default current_timestamp
+      CREATE TABLE IF NOT EXISTS images (
+        id INTEGER PRIMARY KEY,
+        fileName TEXT,
+        width INTEGER,
+        height INTEGER,
+        originalPath TEXT,
+        thumbnailPath TEXT,
+        url TEXT,
+        comment TEXT,
+        deleted INTEGER default 0,
+        createdAt DATETIME DEFAULT current_timestamp
       );
-      create table if not exists tags (
-        id text primary key not null,
-        name text
+      CREATE TABLE IF NOT EXISTS tags (
+        id INTEGER PRIMARY KEY,
+        name TEXT
       );
-      create table if not exists taggings (
-        imageId text,
-        tagId text,
+      CREATE TABLE IF NOT EXISTS taggings (
+        imageId INTEGER,
+        tagId INTEGER,
         FOREIGN KEY(imageId) REFERENCES images(id) ON DELETE CASCADE,
         FOREIGN KEY(tagId) REFERENCES tags(id) ON DELETE CASCADE
       );
-      create unique index if not exists idx_tags_name on tags (name);
-      create unique index if not exists idx_taggings on taggings (imageId, tagId);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_tags_name ON tags (name);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_taggings ON taggings (imageId, tagId);
     `);
 
     this.selectImagesStatement = db.prepare(`
@@ -41,8 +41,19 @@ class Store {
       LEFT JOIN tags t ON it.tagId = t.id 
       WHERE i.deleted = :deleted
       GROUP BY i.id 
-      ORDER BY i.createdAt DESC, t.name
-      LIMIT :limit OFFSET :offset
+      ORDER BY i.id DESC, t.name ASC
+      LIMIT :limit
+    `);
+
+    this.selectImagesBeforeStatement = db.prepare(`
+      SELECT i.*, group_concat(t.name) tags 
+      FROM images i 
+      LEFT JOIN taggings it ON i.id = it.imageId 
+      LEFT JOIN tags t ON it.tagId = t.id 
+      WHERE i.deleted = :deleted AND i.id < :before
+      GROUP BY i.id 
+      ORDER BY i.id DESC, t.name ASC
+      LIMIT :limit
     `);
 
     this.selectImageStatement = db.prepare(`
@@ -55,8 +66,8 @@ class Store {
     `);
 
     this.insertImageStatement = db.prepare(`
-      INSERT INTO images(id, fileName, width, height, originalPath, thumbnailPath, url, comment)
-      VALUES (:id, :fileName, :width, :height, :originalPath, :thumbnailPath, :url, :comment)
+      INSERT INTO images(fileName, width, height, originalPath, thumbnailPath, url, comment)
+      VALUES (:fileName, :width, :height, :originalPath, :thumbnailPath, :url, :comment)
     `);
 
     this.updateImageStatement = db.prepare(`
@@ -71,8 +82,8 @@ class Store {
     `)
 
     this.insertTagStatement = db.prepare(`
-      INSERT INTO tags 
-      VALUES (:id, :name)
+      INSERT INTO tags(name)
+      VALUES (:name)
     `)
 
     this.selectTagStatement = db.prepare(`
@@ -117,10 +128,16 @@ class Store {
   }
 
   fetchImages(options) {
+    if (options.before) {
+      return this.selectImagesBeforeStatement.all(options)
+    }
     return this.selectImagesStatement.all(options);
   }
 
   createImage(image) {
+    if (!image.deleted) {
+      image.deleted = 0;
+    }
     this.insertImageStatement.run(image);
   }
 
@@ -137,7 +154,7 @@ class Store {
 
     var newTagIds = [];
     var newTagNames = [];
-    
+
     if (image.tags) {
       newTagNames = image.tags.split(',');
     }
@@ -148,8 +165,8 @@ class Store {
         newTagIds.push(tag.id)
       } else {
         const newTag = models.newTag(tagName.trim());
-        this.insertTagStatement.run(newTag);
-        newTagIds.push(newTag.id);
+        const info = this.insertTagStatement.run(newTag);
+        newTagIds.push(info.lastInsertRowid);
       }
     })
 

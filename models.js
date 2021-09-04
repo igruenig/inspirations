@@ -3,7 +3,6 @@ const { v4: uuid } = require('uuid');
 
 exports.newTag = (name) => {
   return {
-    id: uuid(),
     name: name
   }
 }
@@ -20,7 +19,6 @@ exports.newImage = (filePath) => {
   const thumbnailPath = path.join(imagesPath, folderName, 'thumbnails');
 
   return {
-    id: imageID,
     fileName,
     width: null,
     height: null,

@@ -14,6 +14,7 @@ function createWindow () {
     width: 1200,
     height: 1000,
     webPreferences: {
+      sandbox: true,
       scrollBounce: true,
       nativeWindowOpen: true, // to enable window.open in renderer
       nodeIntegration: false,
