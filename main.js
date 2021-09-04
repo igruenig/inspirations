@@ -79,12 +79,13 @@ ipcMain.on('open-image', (event, image) => {
     x: mainBounds.x + 100,
     y: mainBounds.y + 50,
     useContentSize: true, // actual content size without window frame
+    fullscreenable: false,
     width: imageWidth,
     height: windowHeight,
     frame: false,
     webPreferences: {
       sandbox: true,
-      scrollBounce: true,
+      scrollBounce: false,
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,

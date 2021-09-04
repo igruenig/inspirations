@@ -110,6 +110,13 @@ const overlay = document.querySelector('.overlay');
 const tags = document.getElementsByName('tags')[0];
 const url = document.getElementsByName('url')[0];
 
+document.addEventListener('dblclick', (event) => {
+  if (event.target.tagName == 'IMG') {
+    const image = window.getImage(event.target.parentNode.id)
+    window.openImage(image);
+  }
+})
+
 document.addEventListener('click', (event) => {
   event.preventDefault();
 
@@ -125,10 +132,6 @@ document.addEventListener('click', (event) => {
     image.deleted = 1;
     window.updateImage(image);
     $('#'+image.id).remove();
-
-  } else if (event.target.tagName == 'IMG') {
-    const image = window.getImage(event.target.parentNode.id)
-    window.openImage(image);
 
   } else if (event.target.classList.contains("overlay")) {
     editingImage.tags = tags.value;
