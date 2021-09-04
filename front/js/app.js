@@ -12,7 +12,11 @@ var editingImage = {};
 // TODO: implement infinite scrolling
 
 // initial render
-const images = window.fetchImages();
+const images = window.fetchImages({
+  deleted: 0,
+  offset: 0,
+  limit: 10
+});
 images.forEach(image => prependImage(image));
 
 
@@ -97,7 +101,10 @@ document.addEventListener('click', (event) => {
     url.value = image.url || '';
     overlay.classList.toggle('overlay--show');
   } else if (event.target.classList.contains('delete-image-button')) {
-
+    const image = window.getImage(event.target.parentNode.parentNode.id);
+    image.deleted = 1;
+    window.updateImage(image);
+    $('#'+image.id).remove();
   } else if (event.target.tagName == 'IMG') {
     const image = window.getImage(event.target.parentNode.id)
     window.openImage(image);
@@ -107,5 +114,5 @@ document.addEventListener('click', (event) => {
     window.updateImage(editingImage);
     overlay.classList.toggle('overlay--show');
   }
-
+  
 });

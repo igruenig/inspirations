@@ -1,19 +1,48 @@
-const db = require('./db');
+const sqlite = require('better-sqlite3');
 const models = require('./models');
 
 class Store {
 
   constructor(location) {
     const dbPath = require('path').join(location, 'meta.db');
-    const db = require('./db')(dbPath);
+    const db = sqlite(dbPath);
+
+    db.exec(`
+      create table if not exists images (
+        id text primary key not null,
+        fileName text,
+        width integer,
+        height integer,
+        originalPath text,
+        thumbnailPath text,
+        url text,
+        comment text,
+        deleted integer default 0,
+        createdAt datetime default current_timestamp
+      );
+      create table if not exists tags (
+        id text primary key not null,
+        name text
+      );
+      create table if not exists taggings (
+        imageId text,
+        tagId text,
+        FOREIGN KEY(imageId) REFERENCES images(id) ON DELETE CASCADE,
+        FOREIGN KEY(tagId) REFERENCES tags(id) ON DELETE CASCADE
+      );
+      create unique index if not exists idx_tags_name on tags (name);
+      create unique index if not exists idx_taggings on taggings (imageId, tagId);
+    `);
 
     this.selectImagesStatement = db.prepare(`
       SELECT i.*, group_concat(t.name) tags 
       FROM images i 
       LEFT JOIN taggings it ON i.id = it.imageId 
       LEFT JOIN tags t ON it.tagId = t.id 
+      WHERE i.deleted = :deleted
       GROUP BY i.id 
       ORDER BY i.createdAt DESC, t.name
+      LIMIT :limit OFFSET :offset
     `);
 
     this.selectImageStatement = db.prepare(`
@@ -32,8 +61,13 @@ class Store {
 
     this.updateImageStatement = db.prepare(`
       UPDATE images 
-      SET url = :url, comment = :comment 
+      SET url = :url, comment = :comment, deleted = :deleted
       WHERE id = :id 
+    `)
+
+    this.deleteImageStatement = db.prepare(`
+        DELETE FROM images
+        WHERE id = ?
     `)
 
     this.insertTagStatement = db.prepare(`
@@ -83,7 +117,7 @@ class Store {
   }
 
   fetchImages(options) {
-    return this.selectImagesStatement.all();
+    return this.selectImagesStatement.all(options);
   }
 
   createImage(image) {
@@ -95,8 +129,18 @@ class Store {
   }
 
   updateImage(image) {
+    // update url, comment and deleted
+    if (!image.deleted) {
+      image.deleted = 0;
+    }
+    this.updateImageStatement.run(image);
+
     var newTagIds = [];
-    const newTagNames = image.tags.split(',');
+    var newTagNames = [];
+    
+    if (image.tags) {
+      newTagNames = image.tags.split(',');
+    }
     
     newTagNames.forEach(tagName => {
       const tag = this.selectTagStatement.get(tagName.trim());
@@ -110,7 +154,10 @@ class Store {
     })
 
     this.setTags(image.id, newTagIds);
-    return image;
+  }
+
+  deleteImage(id) {
+    this.deleteImageStatement.run(id);
   }
 
 }
