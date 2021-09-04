@@ -10,12 +10,10 @@ for (let column = 0; column < 10; column++) {
 
 var editingImage = {};
 
-// TODO: implement infinite scrolling
-
 // initial render
 const images = window.fetchImages({
   deleted: 0,
-  limit: 15
+  limit: 20
 });
 images.forEach(image => addImage(image));
 
@@ -69,13 +67,14 @@ function addImage(image, prepend) {
     </div>
   </div>
   `);
-  const columnIndex = getNextColumn();
   if (prepend) {
-    columns[columnIndex].prepend(imageElement);
+    columns[0].prepend(imageElement);
+    updateColumn(0, image);
   } else {
+    const columnIndex = getNextColumn();
     columns[columnIndex].append(imageElement);
+    updateColumn(columnIndex, image);
   }
-  updateColumn(columnIndex, image);
 }
 
 function dragOverHandler(ev) {
@@ -114,7 +113,7 @@ document.addEventListener('click', (event) => {
   event.preventDefault();
 
   if (event.target.classList.contains('edit-image-button')) {
-    const image = window.getImage(event.target.parentNode.parentNode.id)
+    const image = window.getImage(event.target.parentNode.parentNode.id);
     editingImage = image;
     tags.value = image.tags || '';
     url.value = image.url || '';
@@ -143,7 +142,7 @@ window.addEventListener('scroll', () => {
   if (isFetching) return;
   const {scrollHeight, scrollTop, clientHeight} = document.documentElement;
 
-  if (scrollTop + clientHeight > scrollHeight - 5) {
+  if (scrollTop + clientHeight > scrollHeight - 300) {
     isFetching = true;
     const newImages = window.fetchImages({
       deleted: 0,

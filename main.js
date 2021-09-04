@@ -1,9 +1,10 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
+const Store = require('./store');
 const basePath = app.getPath('userData');
-const imageController = require('./imageController')({ basePath });
+const store = new Store(basePath)
 
 var mainWindow;
 var imageWindows = [];
@@ -58,21 +59,22 @@ ipcMain.on('base-path', (event, arg) => {
 });
 
 ipcMain.on('fetch-images', (event, options) => {
-  event.returnValue = imageController.fetchImages(options);
-})
-
-ipcMain.on('get-image', (event, id) => {
-  event.returnValue = imageController.get(id);
+  event.returnValue = store.fetchImages(options);
 })
 
 ipcMain.handle('create-image', async (event, filePath) => {
-  return await imageController.create(filePath)
+  return await store.createImage(filePath);
+})
+
+ipcMain.on('get-image', (event, id) => {
+  event.returnValue = store.getImage(id);
 })
 
 ipcMain.on('update-image', (event, image) => {
-  imageController.update(image);
+  store.updateImage(image);
   event.returnValue = true;
 })
+
 
 // ImageView
 

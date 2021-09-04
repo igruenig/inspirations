@@ -1,11 +1,12 @@
+const path = require('path')
 const sqlite = require('better-sqlite3');
-const models = require('./models');
+const fileStore = require('./fileStore');
 
 class Store {
 
   constructor(location) {
-    const dbPath = require('path').join(location, 'meta.db');
-    const db = sqlite(dbPath);
+    this.location = location;
+    const db = sqlite(path.join(location, 'meta.db'));
 
     db.exec(`
       CREATE TABLE IF NOT EXISTS images (
@@ -134,11 +135,11 @@ class Store {
     return this.selectImagesStatement.all(options);
   }
 
-  createImage(image) {
-    if (!image.deleted) {
-      image.deleted = 0;
-    }
-    this.insertImageStatement.run(image);
+  async createImage(filePath) {
+    const image = await fileStore.addImage(filePath, this.location);
+    const info = this.insertImageStatement.run(image);
+    image.id = info.lastInsertRowid;
+    return image;
   }
 
   getImage(id) {
@@ -164,7 +165,7 @@ class Store {
       if (tag) {
         newTagIds.push(tag.id)
       } else {
-        const newTag = models.newTag(tagName.trim());
+        const newTag = { name: tagName.trim() };
         const info = this.insertTagStatement.run(newTag);
         newTagIds.push(info.lastInsertRowid);
       }
@@ -179,6 +180,4 @@ class Store {
 
 }
 
-module.exports = (location) => {
-  return new Store(location);
-}
+module.exports = Store;
