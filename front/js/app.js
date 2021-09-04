@@ -42,8 +42,12 @@ function updateColumn(index, image) {
 
 function prependImage(image) {
   const imageElement = $(`
-  <div class="grid-item">
-    <img id="${image.id}" width="${image.width}" height="${image.height}" src="${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}">
+  <div id="${image.id}" class="grid-item">
+    <img width="${image.width}" height="${image.height}" src="${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}">
+    <div class="image-overlay">
+      <button class="edit-image-button">Edit</button>
+      <button class="delete-image-button">Delete</button>
+    </div>
   </div>
   `);
   const columnIndex = getNextColumn();
@@ -85,19 +89,23 @@ const url = document.getElementsByName('url')[0];
 
 document.addEventListener('click', (event) => {
   event.preventDefault();
-  
-  if (event.target.tagName == 'IMG') {
-    const image = window.getImage(event.target.id)
+
+  if (event.target.classList.contains('edit-image-button')) {
+    const image = window.getImage(event.target.parentNode.parentNode.id)
     editingImage = image;
     tags.value = image.tags || '';
     url.value = image.url || '';
-    //window.openImage(image);
     overlay.classList.toggle('overlay--show');
+  } else if (event.target.classList.contains('delete-image-button')) {
 
+  } else if (event.target.tagName == 'IMG') {
+    const image = window.getImage(event.target.parentNode.id)
+    window.openImage(image);
   } else if (event.target.classList.contains("overlay")) {
     editingImage.tags = tags.value;
     editingImage.url = url.value;
     window.updateImage(editingImage);
     overlay.classList.toggle('overlay--show');
   }
+
 });
