@@ -102,6 +102,7 @@ async function dropHandler(ev) {
   for (var i = 0; i < files.length; i++) {
     const image = await window.createImage(files[i].path);
     addImage(image, true);
+    resetLayout();
   }
 }
 
