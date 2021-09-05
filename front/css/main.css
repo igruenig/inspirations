@@ -154,23 +154,18 @@ html, body {
 
 .grid-item img {
   display: block;
-  width: calc(100% - 8px);
-  padding: 4px;
-}
-
-.selected {
-  
-}
-
-.selected img {
-  padding: 1px;
-  border: 3px solid #0063E2;
+  width: 100%;
   border-radius: 3px;
 }
 
-.grid-item:hover img {
-  /*filter: brightness(95%);*/
-  /*transform: scale(0.98);*/
+.image-border {
+  padding: 4px;
+  border-radius: 3px;
+}
+
+.selected .image-border {
+  padding: 1px;
+  border: 3px solid #0063E2;
 }
 
 .grid-item:hover .image-overlay {
@@ -179,7 +174,6 @@ html, body {
 
 .column img {
   height: auto;
-  border-radius: 3px;
   position: relative;
 }
 

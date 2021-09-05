@@ -60,10 +60,12 @@ function updateColumn(index, image) {
 function addImage(image, prepend) {
   const imageElement = $(`
   <div id="${image.id}" class="grid-item">
-    <img width="${image.width}" height="${image.height}" src="file://${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}">
-    <div class="image-overlay">
-      <button class="edit-image-button">Edit</button>
-      <button class="delete-image-button">Delete</button>
+    <div class="image-border">
+      <img width="${image.width}" height="${image.height}" src="file://${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}">
+      <div class="image-overlay">
+        <button class="edit-image-button">Edit</button>
+        <button class="delete-image-button">Delete</button>
+      </div>
     </div>
   </div>
   `);
@@ -121,7 +123,11 @@ document.addEventListener('click', (event) => {
   event.preventDefault();
 
   if (event.target.tagName == 'IMG') {
-    event.target.parentNode.classList.toggle('selected');
+    document.querySelectorAll('.selected').forEach(element => {
+      element.classList.remove('selected');
+    })
+    event.target.parentNode.parentNode.classList.toggle('selected');
+
   } else if (event.target.classList.contains('edit-image-button')) {
     const image = window.getImage(event.target.parentNode.parentNode.id);
     editingImage = image;
