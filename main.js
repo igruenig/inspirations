@@ -12,6 +12,7 @@ var imageWindows = [];
 function createWindow () {
   mainWindow = new BrowserWindow({
     titleBarStyle: 'hidden',
+    trafficLightPosition: {x: 20, y: 20},
     width: 1200,
     height: 1000,
     webPreferences: {
@@ -101,8 +102,7 @@ ipcMain.on('open-image', (event, image) => {
 
   imageWindow.loadFile(path.join(__dirname, "front/image-view.html"))
   imageWindow.once('ready-to-show', () => {
-    imageWindow.webContents.executeJavaScript(`load('${basePath + "/" + image.originalPath + "/" + image.fileName}')`)
-    imageWindow.webContents.executeJavaScript(`addCloseEventListener(${image.id})`)
+    imageWindow.webContents.executeJavaScript(`load(${image.id},'${basePath + "/" + image.originalPath + "/" + image.fileName}')`)
     imageWindow.show();
     imageWindow.focus();
   })

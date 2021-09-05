@@ -23,10 +23,10 @@ html, body {
 
 .search {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 14px;
+  right: 12px;
   width: 180px;
-  -webkit-app-region: none;
+  -webkit-app-region: no-drag;
   padding: 6px 8px 4px;
   border-radius: 4px;
   border: 1px solid #ddd;
