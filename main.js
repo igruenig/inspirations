@@ -11,11 +11,12 @@ var imageWindows = [];
 
 function createWindow () {
   mainWindow = new BrowserWindow({
+    titleBarStyle: 'hidden',
     width: 1200,
     height: 1000,
     webPreferences: {
       sandbox: true,
-      scrollBounce: true,
+      scrollBounce: false,
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
@@ -76,6 +77,7 @@ ipcMain.on('open-image', (event, image) => {
   const windowHeight = Math.min(imageHeight, 1200);
 
   const imageWindow = new BrowserWindow({
+    show: false, // show window when image is loaded
     x: mainBounds.x + 100,
     y: mainBounds.y + 50,
     useContentSize: true, // actual content size without window frame

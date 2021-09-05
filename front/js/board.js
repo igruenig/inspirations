@@ -1,3 +1,5 @@
+const container = document.querySelector('.container');
+
 const columns = [];
 const columnHeights = [];
 var columnsCount = calculateColumns();
@@ -13,7 +15,7 @@ var editingImage = {};
 // initial render
 const images = window.fetchImages({
   deleted: 0,
-  limit: 20
+  limit: 30
 });
 images.forEach(image => addImage(image));
 
@@ -118,21 +120,20 @@ document.addEventListener('click', (event) => {
       window.openImage(image);
       event.target.parentNode.parentNode.classList.add('selected');
     } else {
-      document.querySelectorAll('.selected').forEach(element => {
-        if (element != event.target.parentNode.parentNode) {
-          element.classList.remove('selected');
-        }
-      })
+      if (!event.metaKey) {
+        removeSelection();
+      }
       event.target.parentNode.parentNode.classList.toggle('selected');
     }
     lastClick = new Date();
 
-  } else if (event.targzet.classList.contains('edit-image-button')) {
-    const image = window.getImage(event.target.parentNode.parentNode.id);
-    editingImage = image;
-    tags.value = image.tags || '';
-    url.value = image.url || '';
-    overlay.classList.toggle('overlay--show');
+  } else {
+    removeSelection();
+  }
+  
+  /*
+  else if (event.targzet.classList.contains('edit-image-button')) {
+    
 
   } else if (event.target.classList.contains("overlay")) {
     editingImage.tags = tags.value;
@@ -140,35 +141,59 @@ document.addEventListener('click', (event) => {
     window.updateImage(editingImage);
     overlay.classList.toggle('overlay--show');
   }
-
-  lastClick = clickTime;
+  */
 });
 
+function removeSelection() {
+  document.querySelectorAll('.selected').forEach(element => {
+    if (element != event.target.parentNode.parentNode) {
+      element.classList.remove('selected');
+    }
+  })
+}
+
 document.addEventListener("keydown", (event) => {
+
+  if (event.code == "Space" && event.target == document.body) {
+    event.preventDefault();
+  }
+
   if (event.key === "Backspace" || event.key === "Delete") {
-    const selected = document.querySelectorAll(".selected");
-    selected.forEach(item => {
-      const image = window.getImage(item.id);
-      image.deleted = 1;
-      window.updateImage(image);
-      item.remove();
-    })
+    deleteSelected();
+    resetLayout();
 
   } else if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-
     const selected = document.querySelectorAll(".selected");
     if (selected.length == 1) {
       const image = window.getImage(selected[0].id);
       window.openImage(image);
     }
     
+  } else if (event.code === "KeyI") {
+    const selected = document.querySelectorAll(".selected");
+    if (selected.length == 1) {
+      const image = window.getImage(selected[0].id);
+      editingImage = image;
+      tags.value = image.tags || '';
+      url.value = image.url || '';
+      overlay.classList.toggle('overlay--show');
+    }
   }
 })
 
-window.addEventListener('scroll', () => {
+function deleteSelected() {
+  const selected = document.querySelectorAll(".selected");
+  selected.forEach(item => {
+    const image = window.getImage(item.id);
+    image.deleted = 1;
+    window.updateImage(image);
+    item.remove();
+  })
+}
+
+container.addEventListener('scroll', () => {
   if (isFetching) return;
-  const {scrollHeight, scrollTop, clientHeight} = document.documentElement;
+  const {scrollHeight, scrollTop, clientHeight} = container;
 
   if (scrollTop + clientHeight > scrollHeight - 300) {
     isFetching = true;
