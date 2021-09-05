@@ -62,10 +62,6 @@ function addImage(image, prepend) {
   <div id="${image.id}" class="grid-item">
     <div class="image-border">
       <img width="${image.width}" height="${image.height}" src="file://${window.basePath + "/" + image.thumbnailPath + "/" + image.fileName}">
-      <div class="image-overlay">
-        <button class="edit-image-button">Edit</button>
-        <button class="delete-image-button">Delete</button>
-      </div>
     </div>
   </div>
   `);
@@ -112,36 +108,31 @@ const overlay = document.querySelector('.overlay');
 const tags = document.getElementsByName('tags')[0];
 const url = document.getElementsByName('url')[0];
 
-document.addEventListener('dblclick', (event) => {
-  if (event.target.tagName == 'IMG') {
-    const image = window.getImage(event.target.parentNode.parentNode.id)
-    window.openImage(image);
-  }
-})
-
+var lastClick = null;
 document.addEventListener('click', (event) => {
   event.preventDefault();
 
   if (event.target.tagName == 'IMG') {
-    document.querySelectorAll('.selected').forEach(element => {
-      if (element != event.target.parentNode.parentNode) {
-        element.classList.remove('selected');
-      }
-    })
-    event.target.parentNode.parentNode.classList.toggle('selected');
+    if (new Date() - lastClick < 300) {
+      const image = window.getImage(event.target.parentNode.parentNode.id);
+      window.openImage(image);
+      event.target.parentNode.parentNode.classList.add('selected');
+    } else {
+      document.querySelectorAll('.selected').forEach(element => {
+        if (element != event.target.parentNode.parentNode) {
+          element.classList.remove('selected');
+        }
+      })
+      event.target.parentNode.parentNode.classList.toggle('selected');
+    }
+    lastClick = new Date();
 
-  } else if (event.target.classList.contains('edit-image-button')) {
+  } else if (event.targzet.classList.contains('edit-image-button')) {
     const image = window.getImage(event.target.parentNode.parentNode.id);
     editingImage = image;
     tags.value = image.tags || '';
     url.value = image.url || '';
     overlay.classList.toggle('overlay--show');
-
-  } else if (event.target.classList.contains('delete-image-button')) {
-    const image = window.getImage(event.target.parentNode.parentNode.id);
-    image.deleted = 1;
-    window.updateImage(image);
-    $('#'+image.id).remove();
 
   } else if (event.target.classList.contains("overlay")) {
     editingImage.tags = tags.value;
@@ -149,8 +140,31 @@ document.addEventListener('click', (event) => {
     window.updateImage(editingImage);
     overlay.classList.toggle('overlay--show');
   }
-  
+
+  lastClick = clickTime;
 });
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Backspace" || event.key === "Delete") {
+    const selected = document.querySelectorAll(".selected");
+    selected.forEach(item => {
+      const image = window.getImage(item.id);
+      image.deleted = 1;
+      window.updateImage(image);
+      item.remove();
+    })
+
+  } else if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+
+    const selected = document.querySelectorAll(".selected");
+    if (selected.length == 1) {
+      const image = window.getImage(selected[0].id);
+      window.openImage(image);
+    }
+    
+  }
+})
 
 window.addEventListener('scroll', () => {
   if (isFetching) return;
