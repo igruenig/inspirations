@@ -120,7 +120,9 @@ document.addEventListener('dblclick', (event) => {
 document.addEventListener('click', (event) => {
   event.preventDefault();
 
-  if (event.target.classList.contains('edit-image-button')) {
+  if (event.target.tagName == 'IMG') {
+    event.target.parentNode.classList.toggle('selected');
+  } else if (event.target.classList.contains('edit-image-button')) {
     const image = window.getImage(event.target.parentNode.parentNode.id);
     editingImage = image;
     tags.value = image.tags || '';
