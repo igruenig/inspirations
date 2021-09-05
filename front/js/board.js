@@ -114,7 +114,7 @@ const url = document.getElementsByName('url')[0];
 
 document.addEventListener('dblclick', (event) => {
   if (event.target.tagName == 'IMG') {
-    const image = window.getImage(event.target.parentNode.id)
+    const image = window.getImage(event.target.parentNode.parentNode.id)
     window.openImage(image);
   }
 })
@@ -124,7 +124,9 @@ document.addEventListener('click', (event) => {
 
   if (event.target.tagName == 'IMG') {
     document.querySelectorAll('.selected').forEach(element => {
-      element.classList.remove('selected');
+      if (element != event.target.parentNode.parentNode) {
+        element.classList.remove('selected');
+      }
     })
     event.target.parentNode.parentNode.classList.toggle('selected');
 
