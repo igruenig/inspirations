@@ -78,14 +78,13 @@ ipcMain.on('open-image', (event, image) => {
   const windowHeight = Math.min(imageHeight, 1200);
 
   const imageWindow = new BrowserWindow({
-    show: false, // show window when image is loaded
+    titleBarStyle: 'hidden',
     x: mainBounds.x + 100,
     y: mainBounds.y + 50,
     useContentSize: true, // actual content size without window frame
     fullscreenable: false,
     width: imageWidth,
     height: windowHeight,
-    frame: false,
     webPreferences: {
       sandbox: true,
       scrollBounce: false,
