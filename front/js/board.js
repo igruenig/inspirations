@@ -121,14 +121,14 @@ document.addEventListener('click', (event) => {
       event.target.parentNode.parentNode.classList.add('selected');
     } else {
       if (!event.metaKey) {
-        removeSelection();
+        cancelSelection();
       }
       event.target.parentNode.parentNode.classList.toggle('selected');
     }
     lastClick = new Date();
 
   } else {
-    removeSelection();
+    cancelSelection();
   }
   
   /*
@@ -144,11 +144,9 @@ document.addEventListener('click', (event) => {
   */
 });
 
-function removeSelection() {
+function cancelSelection() {
   document.querySelectorAll('.selected').forEach(element => {
-    if (element != event.target.parentNode.parentNode) {
-      element.classList.remove('selected');
-    }
+    element.classList.remove('selected');
   })
 }
 
@@ -178,6 +176,96 @@ document.addEventListener("keydown", (event) => {
       url.value = image.url || '';
       overlay.classList.toggle('overlay--show');
     }
+  } else if (event.key === "ArrowRight") {
+    event.preventDefault();
+    
+    const allSelected = document.querySelectorAll(".selected")
+    if (allSelected.length > 0) {
+      const lastSelected = allSelected[allSelected.length-1];
+      const column = parseInt(lastSelected.parentNode.id.split("-")[1]);
+      const nextColumn = column + 1;
+
+      const selectedRect = lastSelected.getBoundingClientRect()
+      const nextItemCandidates = document.querySelectorAll("#column-"+nextColumn+" .grid-item");
+      
+      for (let index = 0; index < nextItemCandidates.length; index++) {
+        const item = nextItemCandidates[index];
+        const rect = item.getBoundingClientRect();
+        if (selectedRect.top >= rect.top && selectedRect.top < rect.bottom) {
+          cancelSelection();
+          item.classList.toggle('selected');
+          item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+      }
+    }
+
+  } else if (event.key === "ArrowLeft") {
+    event.preventDefault();
+
+    const allSelected = document.querySelectorAll(".selected")
+    if (allSelected.length > 0) {
+      const lastSelected = allSelected[allSelected.length-1];
+      const column = parseInt(lastSelected.parentNode.id.split("-")[1]);
+      const nextColumn = column - 1;
+
+      const selectedRect = lastSelected.getBoundingClientRect()
+      const nextItemCandidates = document.querySelectorAll("#column-"+nextColumn+" .grid-item");
+      
+      for (let index = 0; index < nextItemCandidates.length; index++) {
+        const item = nextItemCandidates[index];
+        const rect = item.getBoundingClientRect();
+        if (selectedRect.top >= rect.top && selectedRect.top < rect.bottom) {
+          cancelSelection();
+          item.classList.toggle('selected');
+          item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+      }
+    }
+
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+
+    const allSelected = document.querySelectorAll(".selected")
+    if (allSelected.length > 0) {
+      const lastSelected = allSelected[allSelected.length-1];
+      const column = parseInt(lastSelected.parentNode.id.split("-")[1]);
+
+      const nextItemCandidates = document.querySelectorAll("#column-"+column+" .grid-item");
+      
+      for (let index = 0; index < nextItemCandidates.length; index++) {
+        const item = nextItemCandidates[index];
+        if (item == lastSelected && index > 0) {
+          cancelSelection();
+          nextItemCandidates[index - 1].classList.toggle('selected');
+          nextItemCandidates[index - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+      }
+    }
+
+  } else if (event.key === "ArrowDown") {
+    event.preventDefault();
+
+    const allSelected = document.querySelectorAll(".selected")
+    if (allSelected.length > 0) {
+      const lastSelected = allSelected[allSelected.length-1];
+      const column = parseInt(lastSelected.parentNode.id.split("-")[1]);
+
+      const nextItemCandidates = document.querySelectorAll("#column-"+column+" .grid-item");
+      
+      for (let index = 0; index < nextItemCandidates.length; index++) {
+        const item = nextItemCandidates[index];
+        if (item == lastSelected && index + 1 < nextItemCandidates.length) {
+          cancelSelection();
+          nextItemCandidates[index + 1].classList.toggle('selected');
+          nextItemCandidates[index + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+      }
+    }
+
   }
 })
 
