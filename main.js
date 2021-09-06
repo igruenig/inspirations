@@ -73,8 +73,8 @@ ipcMain.on('open-image', (event, image) => {
   }
 
   const mainBounds = mainWindow.getNormalBounds();
-  const imageWidth = Math.min(image.width, 1600);
-  const imageHeight = image.height * (image.width / image.width);
+  const imageWidth = Math.min(Math.floor(image.width / 2), 1600);
+  const imageHeight = Math.floor(image.height * (imageWidth / image.width));
   const windowHeight = Math.min(imageHeight, 1200);
 
   const imageWindow = new BrowserWindow({
@@ -82,9 +82,9 @@ ipcMain.on('open-image', (event, image) => {
     x: mainBounds.x + 100,
     y: mainBounds.y + 50,
     useContentSize: true, // actual content size without window frame
-    fullscreenable: false,
     width: imageWidth,
     height: windowHeight,
+    fullscreenable: false,
     webPreferences: {
       sandbox: true,
       scrollBounce: false,
@@ -95,7 +95,8 @@ ipcMain.on('open-image', (event, image) => {
     }
   })
   
-  if (imageHeight < 1600) {
+
+  if (imageHeight <= 1200) {
     imageWindow.setAspectRatio(image.width/image.height);
   }
 

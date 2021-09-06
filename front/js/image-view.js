@@ -1,15 +1,11 @@
-const closeButton = document.querySelector('.close-button');
 var imageId = null;
 
 function load(id, path) {
   imageId = id;
-  const img = document.querySelector('img');
+  const img = document.createElement("img");
   img.src = path;
+  document.body.appendChild(img);
 }
-
-closeButton.addEventListener('click', () => {
-  window.closeImage(imageId);
-})
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
