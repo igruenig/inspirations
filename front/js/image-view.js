@@ -4,6 +4,7 @@ function load(id, path) {
   imageId = id;
   const img = document.createElement("img");
   img.src = path;
+  img.draggable = false;
   document.body.appendChild(img);
 }
 
