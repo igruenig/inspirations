@@ -2,6 +2,8 @@
 
 Electron based application to collect and browse images as inspiration.
 
+<img width="1312" alt="inspirations" src="https://user-images.githubusercontent.com/518342/136475716-42c07ccd-9d28-449a-bfa8-ed951f29bf51.png">
+
 ## Warning
 
 The app is still in development and some important features are not implemented yet.
