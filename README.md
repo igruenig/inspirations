@@ -13,6 +13,7 @@ The app is still in development and some important features are not implemented 
 ```
 git clone https://github.com/igruenig/Inspirations
 cd Inspirations
+npm install
 npm start
 ```
 
