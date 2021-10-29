@@ -6,7 +6,7 @@ Electron based application to collect and browse images for inspiration.
 
 ## Warning
 
-The app is still in development and some important features are not implemented yet.
+⚠️ The app is still in development and some important features are not implemented yet.
 
 ## Quickstart
 
